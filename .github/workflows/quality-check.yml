@@ -1,0 +1,23 @@
+name: Quality check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  syntax-and-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install lightweight dependency
+        run: python -m pip install "numpy>=1.24,<3.0"
+      - name: Compile Python sources
+        run: python -m py_compile prepare_ssif_dataset.py ssif_core.py train_ssif_v3.py stream_ssif_v3.py smoke_test_pipeline_v3.py
+      - name: Check command-line interfaces
+        run: |
+          python prepare_ssif_dataset.py --help
+          python train_ssif_v3.py --help
+          python stream_ssif_v3.py --help
