@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Model and experiment outputs
+outputs/
+output/
+checkpoints/
+prepared_ssif_v3/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Generated research products
+file_audit.csv
+event_audit.csv
+common_cohort.csv
+event_split.csv
+split_distribution.json
+split_manifest.json
+audit_summary.json
+duplicate_events.json
+possible_duplicate_origin_times.json
+predictions_*.csv
+metrics_*.json
+replay_predictions.jsonl
+live_predictions.jsonl
+
+# Local data must not be committed
+data/
+*.jsonl
