@@ -1,0 +1,49 @@
+name: Assemble verified sources
+
+on:
+  push:
+    paths:
+      - '.bootstrap/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decode compressed source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ssif_core.py prepare_ssif_dataset.py train_ssif_v3.py stream_ssif_v3.py; do
+            base64 --decode ".bootstrap/${name}.gz.b64" | gzip --decompress > "${name}"
+          done
+      - name: Verify exact Git blob identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object ssif_core.py)" = "01c89ebb757cffd83cc3d795496d52cfedcab1e9"
+          test "$(git hash-object prepare_ssif_dataset.py)" = "6da48fc2e55a84f0737fac2c14bfcf2d7356cc19"
+          test "$(git hash-object train_ssif_v3.py)" = "4984a89bfbc4a0dca3c43101f8c7adb7426d1488"
+          test "$(git hash-object stream_ssif_v3.py)" = "cadd06bfe953a34efc9aa3ca4ca2d818d6151855"
+      - name: Compile sources
+        run: python -m py_compile prepare_ssif_dataset.py ssif_core.py train_ssif_v3.py stream_ssif_v3.py smoke_test_pipeline_v3.py
+      - name: Commit assembled sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .bootstrap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prepare_ssif_dataset.py ssif_core.py train_ssif_v3.py stream_ssif_v3.py .bootstrap
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "Add verified SSIF v3 core programs"
+          git push
