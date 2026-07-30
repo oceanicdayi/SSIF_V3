@@ -8,6 +8,14 @@ The pipeline separates data auditing, model selection, alert-threshold calibrati
 
 > Research status: experimental. The streaming program is event-aligned and is not yet evidence of fully trigger-free continuous operation.
 
+## 中文教學與 Google Colab
+
+- [SSIF_V3 中文使用與 Google Colab 實作指南](docs/COLAB_GUIDE_ZH_TW.md)
+- [Google Colab 中文教學 Notebook](notebooks/SSIF_V3_Colab_Tutorial_ZH_TW.ipynb)
+- [直接在 Google Colab 開啟 Notebook](https://colab.research.google.com/github/oceanicdayi/SSIF_V3/blob/main/notebooks/SSIF_V3_Colab_Tutorial_ZH_TW.ipynb)
+
+中文教學涵蓋 Google Drive 目錄配置、資料稽核與四集合切分、EW10 快速測試、EW10–EW40 正式訓練、獨立資料 inference、指標與圖表、anticipatory subset、事件層級分析、串流 replay，以及實驗版本與可重現性紀錄。研究資料、模型權重與預測結果應保存在 Google Drive，不應直接提交到 GitHub。
+
 ## Research question
 
 For each station-event record, use the first `EW` seconds of the observed 1 Hz intensity sequence to predict:
@@ -41,6 +49,10 @@ SSIF_V3/
 ├── smoke_test_pipeline_v3.py
 ├── run_research_pipeline.ps1
 ├── CODE_AND_RESEARCH_MAP.md
+├── docs/
+│   └── COLAB_GUIDE_ZH_TW.md
+├── notebooks/
+│   └── SSIF_V3_Colab_Tutorial_ZH_TW.ipynb
 ├── requirements.txt
 └── .github/workflows/quality-check.yml
 ```
