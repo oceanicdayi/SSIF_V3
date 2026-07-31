@@ -175,7 +175,17 @@ def event_identity(eq_info: Mapping[str, Any], row_number: int) -> str:
 
 
 def payload_fingerprint(payload: Mapping[str, Any]) -> str:
-    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    # source_file is archive provenance, not scientific event content. The same
+    # event copied between folders should still be recognized as an exact
+    # duplicate rather than an identity conflict.
+    scientific_payload = {key: value for key, value in payload.items() if key != "source_file"}
+    canonical = json.dumps(
+        scientific_payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
