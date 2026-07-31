@@ -12,12 +12,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install lightweight dependency
-        run: python -m pip install "numpy>=1.24,<3.0"
+      - name: Install lightweight dependencies
+        run: python -m pip install "numpy>=1.24,<3.0" "pandas>=2.0,<3.0"
       - name: Compile Python sources
-        run: python -m py_compile prepare_ssif_dataset.py ssif_core.py train_ssif_v3.py stream_ssif_v3.py smoke_test_pipeline_v3.py
+        run: |
+          python -m py_compile \
+            prepare_ssif_dataset.py \
+            ssif_core.py \
+            train_ssif_v3.py \
+            stream_ssif_v3.py \
+            csv_to_ssif_json.py \
+            combined_csv_to_ssif_json.py \
+            smoke_test_pipeline_v3.py \
+            smoke_test_csv_conversion.py \
+            smoke_test_combined_csv_conversion.py
       - name: Check command-line interfaces
         run: |
           python prepare_ssif_dataset.py --help
           python train_ssif_v3.py --help
           python stream_ssif_v3.py --help
+          python csv_to_ssif_json.py --help
+          python combined_csv_to_ssif_json.py --help
+      - name: Test combined CSV streaming conversion
+        run: python smoke_test_combined_csv_conversion.py
