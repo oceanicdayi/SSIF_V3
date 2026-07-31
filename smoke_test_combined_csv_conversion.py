@@ -54,7 +54,9 @@ def main() -> None:
         output_dir = root / "events"
 
         rows = [make_row(1), make_row(2), make_row(3)]
-        rows.append(rows[1].copy())  # exact duplicate
+        duplicate = rows[1].copy()
+        duplicate["source_file"] = "/archive/copied/event_2.json"
+        rows.append(duplicate)  # same scientific content, different archive path
         with csv_path.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
             writer.writeheader()
