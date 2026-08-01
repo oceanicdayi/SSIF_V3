@@ -26,7 +26,8 @@ jobs:
             smoke_test_pipeline_v3.py \
             smoke_test_csv_conversion.py \
             smoke_test_combined_csv_conversion.py \
-            validate_colab_notebook.py
+            validate_colab_notebook.py \
+            validate_training_notebook.py
       - name: Check command-line interfaces
         run: |
           python prepare_ssif_dataset.py --help
@@ -34,7 +35,9 @@ jobs:
           python stream_ssif_v3.py --help
           python csv_to_ssif_json.py --help
           python combined_csv_to_ssif_json.py --help
-      - name: Validate Colab notebook
-        run: python validate_colab_notebook.py
+      - name: Validate Colab notebooks
+        run: |
+          python validate_colab_notebook.py
+          python validate_training_notebook.py
       - name: Test combined CSV streaming conversion
         run: python smoke_test_combined_csv_conversion.py
