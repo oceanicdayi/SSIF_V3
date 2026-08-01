@@ -39,6 +39,11 @@ def main() -> None:
     assert "rm', '-rf', str(REPO_ROOT)" not in combined, (
         "do not delete a possible current working directory through rm -rf"
     )
+    assert "csv.field_size_limit" in combined, (
+        "large nested CSV fields must raise Python's default 128 KiB limit"
+    )
+    assert "sys.maxsize" in combined
+    assert "assert csv.field_size_limit() > 131072" in combined
     assert "combined_csv_to_ssif_json.py" in combined
     assert "smoke_test_combined_csv_conversion.py" in combined
     assert "RUN_FULL_SCAN = False" in combined
@@ -46,7 +51,8 @@ def main() -> None:
 
     print(
         f"PASS: {NOTEBOOK.name} contains {len(cells)} cells; "
-        f"all code cells compile and no saved errors are present"
+        f"all code cells compile, CSV field limit is configured, "
+        f"and no saved errors are present"
     )
 
 
