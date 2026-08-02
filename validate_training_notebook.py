@@ -32,7 +32,9 @@ def main() -> None:
         "os.chdir('/content')",
         "prepare_ssif_dataset.py",
         "train_ssif_v3.py",
-        "combined_csv_to_ssif_json.py",
+        "load_station_records",
+        "TRAIN_DATA.rglob('*.json')",
+        "datetime.now(timezone.utc)",
         "RUN_QUICK_TRAIN = True",
         "RUN_FULL_TRAIN = False",
         "RUN_EXTERNAL_EVALUATION = False",
@@ -41,8 +43,10 @@ def main() -> None:
         "calibration",
         "data_fingerprint_sha256",
         "checkpoint_audit",
-        "--cohort','common'",
-        "--window-seed-mode','same'",
+        "--cohort",
+        "common",
+        "--window-seed-mode",
+        "same",
         "--min-precision",
         "best.pt",
         "summary.json",
@@ -55,10 +59,13 @@ def main() -> None:
     assert "LABEL_HORIZON = 120" in combined
     assert "REBUILD_SPLIT = False" in combined
     assert "OVERWRITE_FULL_MODEL = False" in combined
+    assert "datetime.utcnow()" not in combined
+    assert "validation['counters'].get('event_json'" not in combined
+    assert "combined_csv_to_ssif_json.py','validate'" not in combined
 
     print(
         f"PASS: {NOTEBOOK.name} contains {len(cells)} cells; "
-        "all code cells compile and training safeguards are present"
+        "all code cells compile and training-loader safeguards are present"
     )
 
 
