@@ -547,12 +547,15 @@ print(reproducibility)
 原因通常是：
 
 - audit 與 training 使用了不同資料目錄；
+- 目錄結構改變（例如由 `training/`/`validation/` 改成 `第一批/`、`第二批/`），使 event ID 中的相對路徑不一致；
 - 新增或刪除了事件；
 - valid-fraction 設定不同；
 - `label_horizon` 不同；
 - manifest 是舊資料版本。
 
-應重新做資料版本稽核，建立新的 prepared 目錄，不要手工修改 manifest。
+應重新做資料版本稽核，建立新的 prepared 目錄，不要手工修改 manifest。訓練 Notebook 若開啟 `AUTO_REBUILD_SPLIT_ON_ARCHIVE_CHANGE=True`，會在 archive 與 manifest 不一致時自動重建 split。
+
+驗證 archive 時請遞迴掃描所有子目錄的 `*.json`（`TRAIN_DATA.rglob('*.json')` 或 `ssif_core.load_station_records`），不要只掃頂層 `event_*.json`。
 
 ### 找不到 GPU 或 CUDA out of memory
 

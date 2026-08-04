@@ -550,12 +550,36 @@ def convert_csv(
     return summary
 
 
+# Metadata / report JSON files that may sit beside event archives but are not events.
+NON_EVENT_JSON_NAMES = frozenset({
+    "conversion_summary.json",
+    "conversion_error_report.json",
+    "archive_validation.json",
+})
+
+
+def iter_event_json_files(data_dir: Path) -> List[Path]:
+    """Return all event JSON files under ``data_dir``, including subdirectories.
+
+    Accepts both converted ``event_*.json`` names and original CWA archive names
+    such as ``第一批/20190101_223502.json``.
+    """
+    root = Path(data_dir)
+    if not root.is_dir():
+        raise FileNotFoundError(f"data directory not found: {root}")
+    return sorted(
+        fp for fp in root.rglob("*.json")
+        if fp.name not in NON_EVENT_JSON_NAMES
+    )
+
+
 def validate_archive(data_dir: Path, horizon: int, max_errors: int) -> Dict[str, Any]:
     errors: List[Dict[str, Any]] = []
     counters = Counter()
-    event_files = sorted(data_dir.glob("event_*.json"))
+    event_files = iter_event_json_files(data_dir)
     for path in event_files:
         counters["event_json"] += 1
+        rel = str(path.relative_to(data_dir)).replace("\\", "/")
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(payload.get("eq_info"), dict):
@@ -577,7 +601,11 @@ def validate_archive(data_dir: Path, horizon: int, max_errors: int) -> Dict[str,
         except Exception as exc:
             counters["errors"] += 1
             if len(errors) < max_errors:
-                errors.append({"file": path.name, "error_type": type(exc).__name__, "error": str(exc)})
+                errors.append({
+                    "file": rel,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                })
     return {
         "data_dir": str(data_dir),
         "horizon": horizon,
