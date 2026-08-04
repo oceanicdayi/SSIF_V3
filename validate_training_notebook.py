@@ -35,6 +35,8 @@ def main() -> None:
         "load_station_records",
         "TRAIN_DATA.rglob('*.json')",
         "datetime.now(timezone.utc)",
+        "AUTO_REBUILD_SPLIT_ON_ARCHIVE_CHANGE = True",
+        "manifest_matches_archive",
         "RUN_QUICK_TRAIN = True",
         "RUN_FULL_TRAIN = False",
         "RUN_EXTERNAL_EVALUATION = False",
@@ -62,6 +64,7 @@ def main() -> None:
     assert "datetime.utcnow()" not in combined
     assert "validation['counters'].get('event_json'" not in combined
     assert "combined_csv_to_ssif_json.py','validate'" not in combined
+    assert "EXTERNAL_DATA.rglob('*.json')" in combined
 
     print(
         f"PASS: {NOTEBOOK.name} contains {len(cells)} cells; "

@@ -93,6 +93,24 @@ def main() -> None:
         assert len(first_event["intensity"]["A001"]) == 120
         assert first_event["stids"]["A001"]["elev"] is None
 
+        # Nested batch folders (第一批/第二批/...) must also be discovered.
+        nested_root = root / "nested_batches"
+        batch_a = nested_root / "第一批"
+        batch_b = nested_root / "第二批"
+        batch_a.mkdir(parents=True)
+        batch_b.mkdir(parents=True)
+        for index, source in enumerate(sorted(output_dir.glob("event_*.json")), start=1):
+            target_dir = batch_a if index % 2 else batch_b
+            target = target_dir / f"2024040{index}_000019.json"
+            target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        (nested_root / "conversion_summary.json").write_text("{}", encoding="utf-8")
+
+        nested_validated = run_command(script, [
+            "validate", "--data-dir", str(nested_root),
+        ])
+        assert nested_validated["counters"]["event_json"] == 3
+        assert nested_validated["counters"].get("errors", 0) == 0
+
     print("PASS: combined CSV streaming conversion smoke test")
 
 
