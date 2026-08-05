@@ -45,6 +45,8 @@ def main() -> None:
         "prepare_formal_training",
         "run_formal_window",
         "finalize_formal_training",
+        "inspect_window_completion",
+        "FORCE_RETRAIN_WINDOWS = set()",
         "run_formal_window(10)",
         "run_formal_window(15)",
         "run_formal_window(20)",
@@ -69,7 +71,8 @@ def main() -> None:
         "summary.json",
         "run_inventory.json",
         "per_window_cells",
-        "window_artifacts_complete",
+        "skip_completed_windows",
+        "不重複訓練",
     ]
     for fragment in required_fragments:
         assert fragment in combined, f"missing training safeguard: {fragment}"
