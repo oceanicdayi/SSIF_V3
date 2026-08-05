@@ -47,10 +47,11 @@ Colab 選單：
 執行階段 → 變更執行階段類型 → 硬體加速器 → A100 / T4 GPU（或可用 GPU）
 ```
 
-正式訓練 notebook 可用 `PARALLEL_EW_JOBS=2` 在單顆 GPU 上並行訓練多個 EW（`train_ssif_v3.py --parallel-windows`）。此時：
+正式訓練 notebook 第 8 節已拆成 **EW10 → EW15 → … → EW40 各自獨立 cell**，最後再彙整 `summary.json`。Colab 中斷後可從尚未完成的視窗續跑。
 
-- **建議開啟「大量 RAM / High-RAM」**：它增加的是系統 RAM，不是 GPU VRAM；約 50 萬筆 station records + 兩個訓練迴圈較吃主記憶體。
-- 若 CUDA OOM：把 `PARALLEL_EW_JOBS` 改回 `1`，或降低 `BATCH_SIZE`。
+- 先執行 8.0 準備，再依序跑各 EW cell，最後跑 8.8 彙整。
+- 資料量大時仍可開啟「大量 RAM / High-RAM」（系統 RAM，不是 GPU VRAM）。
+- 若 CUDA OOM：降低 `BATCH_SIZE`。
 
 確認：
 
