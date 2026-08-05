@@ -44,8 +44,13 @@ MyDrive/SSIF_V3_workspace/
 Colab 選單：
 
 ```text
-執行階段 → 變更執行階段類型 → 硬體加速器 → T4 GPU（或可用 GPU）
+執行階段 → 變更執行階段類型 → 硬體加速器 → A100 / T4 GPU（或可用 GPU）
 ```
+
+正式訓練 notebook 可用 `PARALLEL_EW_JOBS=2` 在單顆 GPU 上並行訓練多個 EW（`train_ssif_v3.py --parallel-windows`）。此時：
+
+- **建議開啟「大量 RAM / High-RAM」**：它增加的是系統 RAM，不是 GPU VRAM；約 50 萬筆 station records + 兩個訓練迴圈較吃主記憶體。
+- 若 CUDA OOM：把 `PARALLEL_EW_JOBS` 改回 `1`，或降低 `BATCH_SIZE`。
 
 確認：
 

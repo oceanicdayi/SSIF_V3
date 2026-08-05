@@ -25,12 +25,21 @@ import csv
 import json
 import math
 import os
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
+
+_PRINT_LOCK = threading.Lock()
+
+
+def _log(message: str) -> None:
+    with _PRINT_LOCK:
+        print(message, flush=True)
 
 from ssif_core import (
     ALERT_CLASS_THRESHOLD,
@@ -234,6 +243,7 @@ def train_one_window(
     epochs_without_improvement = 0
     history: List[Dict[str, Any]] = []
     provisional_path = run_dir / "best_uncalibrated.pt"
+    _log(f"[EW{window:02d}] start training on {device}; train={len(train_ds)} val={len(val_ds)}")
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -287,12 +297,11 @@ def train_one_window(
             "threshold_preview": {"value": val_thr, **val_thr_info},
         }
         history.append(epoch_row)
-        print(
+        _log(
             f"[EW{window:02d}] epoch {epoch:02d}/{args.epochs} "
             f"loss={epoch_row['train']['loss']:.4f} val_AP={val_ap:.4f} "
             f"thr={val_thr:.3f} P={val_metrics['alert']['precision']:.3f} "
-            f"POD={val_metrics['alert']['pod']:.3f} F1={val_metrics['alert']['f1']:.3f}",
-            flush=True,
+            f"POD={val_metrics['alert']['pod']:.3f} F1={val_metrics['alert']['f1']:.3f}"
         )
 
         if val_ap > best_ap + args.min_delta:
@@ -310,7 +319,7 @@ def train_one_window(
         else:
             epochs_without_improvement += 1
             if args.patience > 0 and epochs_without_improvement >= args.patience:
-                print(f"[EW{window:02d}] early stopping at epoch {epoch}")
+                _log(f"[EW{window:02d}] early stopping at epoch {epoch}")
                 break
 
     best_state = torch.load(provisional_path, map_location=device, weights_only=False)
@@ -371,6 +380,10 @@ def train_one_window(
         "validation": val_metrics, "calibration": calibration_metrics, "test": test_metrics
     })
     provisional_path.unlink(missing_ok=True)
+    _log(
+        f"[EW{window:02d}] finished best_epoch={best_epoch} "
+        f"thr={threshold:.3f} test_F1={test_metrics['alert']['f1']:.3f}"
+    )
 
     return {
         "window": window,
@@ -486,22 +499,46 @@ def command_train_all(args: argparse.Namespace) -> None:
     save_json(output_dir / "run_config.json", run_config)
     save_json(output_dir / "data_stats.json", data_stats)
 
-    print(f"[train-all] device={device}; records={len(records)}; windows={args.windows}")
-    results = []
-    for window in args.windows:
-        results.append(
-            train_one_window(
-                records=records,
-                split=split,
-                window=window,
-                output_dir=output_dir,
-                args=args,
-                device=device,
-                allowed_record_keys=allowed_record_keys,
-            )
+    parallel_windows = max(1, int(getattr(args, "parallel_windows", 1)))
+    if parallel_windows > len(args.windows):
+        parallel_windows = len(args.windows)
+    _log(
+        f"[train-all] device={device}; records={len(records)}; "
+        f"windows={args.windows}; parallel_windows={parallel_windows}"
+    )
+
+    def _train(window: int) -> Dict[str, Any]:
+        # Share one in-memory archive across threads. When several EW jobs share a
+        # single GPU, shrink DataLoader workers to avoid nested-process storms.
+        local_args = argparse.Namespace(**vars(args))
+        if parallel_windows > 1:
+            local_args.workers = max(0, int(args.workers) // parallel_windows)
+        return train_one_window(
+            records=records,
+            split=split,
+            window=window,
+            output_dir=output_dir,
+            args=local_args,
+            device=device,
+            allowed_record_keys=allowed_record_keys,
         )
+
+    results: List[Dict[str, Any]]
+    if parallel_windows <= 1:
+        results = [_train(window) for window in args.windows]
+    else:
+        # Thread pool keeps the loaded archive shared (no second Drive scan) while
+        # overlapping several small EW models on one under-utilized A100/L4/T4.
+        results_by_window: Dict[int, Dict[str, Any]] = {}
+        with ThreadPoolExecutor(max_workers=parallel_windows) as executor:
+            futures = {executor.submit(_train, window): window for window in args.windows}
+            for future in as_completed(futures):
+                window = futures[future]
+                results_by_window[window] = future.result()
+        results = [results_by_window[window] for window in args.windows]
+
     save_json(output_dir / "summary.json", results)
-    print(json.dumps(results, ensure_ascii=False, indent=2))
+    _log(json.dumps(results, ensure_ascii=False, indent=2))
 
 
 def command_evaluate_all(args: argparse.Namespace) -> None:
@@ -596,6 +633,15 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--patience", type=int, default=6)
     train.add_argument("--min-delta", type=float, default=1e-4)
     train.add_argument("--workers", type=int, default=0)
+    train.add_argument(
+        "--parallel-windows",
+        type=int,
+        default=1,
+        help=(
+            "Train this many EW windows concurrently after one archive load. "
+            "Use 2 on a single A100 when VRAM allows; use 1 if CUDA OOM occurs."
+        ),
+    )
     train.add_argument("--device", default="auto")
     train.add_argument("--amp", action="store_true", help="Use CUDA mixed precision")
     train.add_argument("--max-files", type=int, default=None)
