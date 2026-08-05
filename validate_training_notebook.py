@@ -28,15 +28,21 @@ def main() -> None:
         code_sources.append(source_text)
 
     combined = "\n".join(code_sources)
+    markdown = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in cells
+        if cell.get("cell_type") == "markdown"
+    )
     required_fragments = [
         "os.chdir('/content')",
         "prepare_ssif_dataset.py",
         "train_ssif_v3.py",
         "load_station_records",
-        "TRAIN_DATA.rglob('*.json')",
+        "STAGED_ARCHIVE",
+        "list_top_level_json",
         "datetime.now(timezone.utc)",
-        "AUTO_REBUILD_SPLIT_ON_ARCHIVE_CHANGE = True",
-        "manifest_matches_archive",
+        "PARALLEL_EW_JOBS = 2",
+        "--parallel-windows",
         "RUN_QUICK_TRAIN = True",
         "RUN_FULL_TRAIN = False",
         "RUN_EXTERNAL_EVALUATION = False",
@@ -53,6 +59,8 @@ def main() -> None:
         "best.pt",
         "summary.json",
         "run_inventory.json",
+        "_FINISHED_PATTERN",
+        "high_ram_recommended",
     ]
     for fragment in required_fragments:
         assert fragment in combined, f"missing training safeguard: {fragment}"
@@ -64,7 +72,8 @@ def main() -> None:
     assert "datetime.utcnow()" not in combined
     assert "validation['counters'].get('event_json'" not in combined
     assert "combined_csv_to_ssif_json.py','validate'" not in combined
-    assert "EXTERNAL_DATA.rglob('*.json')" in combined
+    assert "High-RAM" in markdown or "High-RAM" in combined
+    assert "## 8. 正式訓練 EW10–EW40" in markdown
 
     print(
         f"PASS: {NOTEBOOK.name} contains {len(cells)} cells; "
