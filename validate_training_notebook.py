@@ -41,8 +41,17 @@ def main() -> None:
         "STAGED_ARCHIVE",
         "list_top_level_json",
         "datetime.now(timezone.utc)",
-        "PARALLEL_EW_JOBS = 2",
-        "--parallel-windows",
+        "PARALLEL_EW_JOBS = 1",
+        "prepare_formal_training",
+        "run_formal_window",
+        "finalize_formal_training",
+        "run_formal_window(10)",
+        "run_formal_window(15)",
+        "run_formal_window(20)",
+        "run_formal_window(25)",
+        "run_formal_window(30)",
+        "run_formal_window(35)",
+        "run_formal_window(40)",
         "RUN_QUICK_TRAIN = True",
         "RUN_FULL_TRAIN = False",
         "RUN_EXTERNAL_EVALUATION = False",
@@ -59,8 +68,8 @@ def main() -> None:
         "best.pt",
         "summary.json",
         "run_inventory.json",
-        "_FINISHED_PATTERN",
-        "high_ram_recommended",
+        "per_window_cells",
+        "window_artifacts_complete",
     ]
     for fragment in required_fragments:
         assert fragment in combined, f"missing training safeguard: {fragment}"
@@ -72,12 +81,22 @@ def main() -> None:
     assert "datetime.utcnow()" not in combined
     assert "validation['counters'].get('event_json'" not in combined
     assert "combined_csv_to_ssif_json.py','validate'" not in combined
-    assert "High-RAM" in markdown or "High-RAM" in combined
     assert "## 8. 正式訓練 EW10–EW40" in markdown
+    assert "### 8.1 正式訓練 EW10" in markdown
+    assert "### 8.8 彙整正式訓練結果" in markdown
+    for title in (
+        "### 8.2 正式訓練 EW15",
+        "### 8.3 正式訓練 EW20",
+        "### 8.4 正式訓練 EW25",
+        "### 8.5 正式訓練 EW30",
+        "### 8.6 正式訓練 EW35",
+        "### 8.7 正式訓練 EW40",
+    ):
+        assert title in markdown, f"missing markdown section: {title}"
 
     print(
         f"PASS: {NOTEBOOK.name} contains {len(cells)} cells; "
-        "all code cells compile and training-loader safeguards are present"
+        "all code cells compile and per-window formal-training cells are present"
     )
 
 
